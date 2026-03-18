@@ -47,8 +47,8 @@ public static class SeedData
             context.Developers.AddRange(
                 new Developer { Name = "Diogo Julio", Phone = "5511999990001", Email = "djulio@consultoria.com", Specialization = "Backend .NET", IsAvailable = true },
                 new Developer { Name = "Matheus Zottis", Phone = "5511999990002", Email = "mzottis@consultoria.com", Specialization = "Frontend Blazor", IsAvailable = true },
-                new Developer { Name = "Jonata Rafael", Phone = "5511999990003", Email = "jrafael@consultoria.com", Specialization = "DevOps", IsAvailable = false }
-                new Developer { Name = "Victor Didoff ", Phone = "5511999990004", Email = "vdidoff@consultoria.com", Specialization = "DevOps & Docker", IsAvailable = true }
+                new Developer { Name = "Jonata Rafael", Phone = "5511999990003", Email = "jrafael@consultoria.com", Specialization = "DevOps", IsAvailable = false },
+                new Developer { Name = "Victor Didoff ", Phone = "5511999990004", Email = "vdidoff@consultoria.com", Specialization = "DevOps & Docker", IsAvailable = true },
                 new Developer { Name = "Vinicius Silva", Phone = "5511999990005", Email = "vsilva@consultoria.com", Specialization = "DevOps & Frontend Blazor", IsAvailable = true }
             );
             await context.SaveChangesAsync();
