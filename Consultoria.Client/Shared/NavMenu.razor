@@ -1,3 +1,6 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Consultoria.Client.Services
+@inject AuthService AuthService
 @inject NavigationManager Navigation
 
 <nav class="navbar navbar-expand-lg navbar-consultoria">
@@ -5,7 +8,64 @@
         <a class="navbar-brand" href="/">
             Consultoria<span class="brand-accent">Dev</span>
         </a>
+
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarContent" style="color: var(--text-secondary)">
+            <i class="bi bi-list" style="font-size:1.5rem;"></i>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto ms-3">
+                <li class="nav-item">
+                    <a class="nav-link-custom" href="/">
+                        <i class="bi bi-house me-1"></i> Início
+                    </a>
+                </li>
+                <AuthorizeView Roles="Admin">
+                    <Authorized>
+                        <li class="nav-item">
+                            <a class="nav-link-custom" href="/admin/dashboard">
+                                <i class="bi bi-grid me-1"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link-custom" href="/admin/problems">
+                                <i class="bi bi-puzzle me-1"></i> Problemas
+                            </a>
+                        </li>
+                    </Authorized>
+                </AuthorizeView>
+            </ul>
+
+            <div class="d-flex align-items-center gap-2">
+                <AuthorizeView>
+                    <Authorized>
+                        <span class="nav-link-custom" style="cursor:default;">
+                            <i class="bi bi-person-circle me-1" style="color:var(--accent-cyan);"></i>
+                            @context.User.Identity?.Name
+                        </span>
+                        <button class="btn-outline-glass" @onclick="HandleLogout" style="padding: 0.4rem 1rem; font-size:0.85rem;">
+                            <i class="bi bi-box-arrow-right me-1"></i> Sair
+                        </button>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/login" class="btn-outline-glass" style="text-decoration:none; padding: 0.4rem 1rem; font-size:0.85rem;">
+                            <i class="bi bi-person me-1"></i> Entrar
+                        </a>
+                        <a href="/register" class="btn-primary-glow ms-1" style="text-decoration:none; padding: 0.4rem 1rem; font-size:0.85rem;">
+                            Criar Conta
+                        </a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
     </div>
 </nav>
 
-
+@code {
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}
