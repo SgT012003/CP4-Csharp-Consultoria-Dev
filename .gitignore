@@ -1,0 +1,39 @@
+## Arquivos sensíveis
+.env
+*.pfx
+*.key
+*.pem
+
+## Build outputs
+bin/
+obj/
+out/
+
+## Dados locais
+*.db
+*.db-shm
+*.db-wal
+
+## IDE
+.vs/
+.vscode/settings.json
+*.user
+*.suo
+
+## Docker
+docker-compose.override.yml
+
+## Logs
+*.log
+logs/
+
+## Secrets do dotnet
+**/usersecrets/
+
+## NuGet
+*.nupkg
+.nuget/
+
+## OS
+.DS_Store
+Thumbs.db

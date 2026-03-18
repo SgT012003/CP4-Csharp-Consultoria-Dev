@@ -1,0 +1,42 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Consultoria.Client.Pages
+@using Consultoria.Client.Shared
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @if (context.User.Identity?.IsAuthenticated != true)
+                    {
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <div class="auth-container">
+                            <div class="auth-card" style="text-align:center">
+                                <i class="bi bi-shield-x" style="font-size:3rem;color:#ef4444;"></i>
+                                <h2 style="margin-top:1rem;">Acesso Negado</h2>
+                                <p style="color:var(--text-secondary)">Você não tem permissão para acessar esta página.</p>
+                                <a href="/" class="btn-primary-glow" style="display:inline-block;margin-top:1.5rem;text-decoration:none;">Voltar ao início</a>
+                            </div>
+                        </div>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+        </Found>
+        <NotFound>
+            <PageTitle>Página não encontrada</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <div class="auth-container">
+                    <div class="auth-card" style="text-align:center">
+                        <i class="bi bi-question-circle" style="font-size:3rem;color:var(--accent-cyan);"></i>
+                        <h2 style="margin-top:1rem;">404 — Não Encontrado</h2>
+                        <p style="color:var(--text-secondary)">Essa página não existe.</p>
+                        <a href="/" class="btn-primary-glow" style="display:inline-block;margin-top:1.5rem;text-decoration:none;">Voltar ao início</a>
+                    </div>
+                </div>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

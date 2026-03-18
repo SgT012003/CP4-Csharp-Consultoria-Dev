@@ -1,0 +1,92 @@
+@page "/register"
+@using Consultoria.Client.Services
+@using Consultoria.Shared.DTOs
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Criar Conta — Consultoria Dev</PageTitle>
+
+<div class="auth-bg"></div>
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <h2>Criar <span style="color:var(--accent-cyan);">Conta</span></h2>
+            <p>Registre-se para solicitar consultoria</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.5rem;color:#ef4444;font-size:0.85rem;">
+                <i class="bi bi-exclamation-circle me-2"></i> @errorMessage
+            </div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label-dark">Nome Completo</label>
+            <input type="text" class="form-control form-control-dark"
+                   @bind="fullName" placeholder="João da Silva" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label-dark">Email</label>
+            <input type="email" class="form-control form-control-dark"
+                   @bind="email" placeholder="joao@empresa.com" />
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label-dark">Senha</label>
+            <input type="password" class="form-control form-control-dark"
+                   @bind="password" placeholder="Mínimo 8 caracteres, 1 maiúscula, 1 número, 1 especial" />
+        </div>
+
+        <button class="btn-primary-glow" style="width:100%;border:none;padding:0.85rem;"
+                @onclick="HandleRegister" disabled="@isLoading">
+            @if (isLoading)
+            {
+                <span class="spinner-border spinner-border-sm me-2" style="width:14px;height:14px;border-width:2px;"></span>
+            }
+            else
+            {
+                <i class="bi bi-person-plus me-2"></i>
+            }
+            @(isLoading ? "Criando conta..." : "Criar Conta")
+        </button>
+
+        <div style="text-align:center;margin-top:1.5rem;color:var(--text-muted);font-size:0.85rem;">
+            Já tem conta?
+            <a href="/login" style="color:var(--accent-cyan);text-decoration:none;">Entrar aqui</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string fullName = string.Empty;
+    private string email = string.Empty;
+    private string password = string.Empty;
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+
+    private async Task HandleRegister()
+    {
+        errorMessage = string.Empty;
+        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "Preencha todos os campos.";
+            return;
+        }
+
+        isLoading = true;
+        var result = await AuthService.RegisterAsync(new RegisterDto
+        {
+            FullName = fullName,
+            Email = email,
+            Password = password
+        });
+        isLoading = false;
+
+        if (result.Success)
+            Navigation.NavigateTo("/", forceLoad: true);
+        else
+            errorMessage = result.Message;
+    }
+}

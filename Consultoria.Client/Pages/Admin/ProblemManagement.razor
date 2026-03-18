@@ -1,0 +1,222 @@
+@page "/admin/problems"
+@attribute [Authorize(Roles = "Admin")]
+@using Consultoria.Client.Services
+@using Consultoria.Shared.DTOs
+@using Microsoft.AspNetCore.Authorization
+@inject ProblemService ProblemService
+@inject HttpClient Http
+
+<PageTitle>Gerenciar Problemas — Consultoria Dev</PageTitle>
+
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="pb-3 mb-3" style="border-bottom:1px solid var(--border-glass);">
+            <div style="font-size:1.1rem;font-weight:800;color:var(--text-primary);">
+                Consultoria<span style="color:var(--accent-cyan);">Dev</span>
+            </div>
+            <small style="color:var(--text-muted);font-size:0.75rem;">Painel Administrativo</small>
+        </div>
+        <div class="admin-sidebar-title">Menu</div>
+        <a href="/admin/dashboard" class="admin-nav-link">
+            <i class="bi bi-grid"></i> Dashboard
+        </a>
+        <a href="/admin/problems" class="admin-nav-link active">
+            <i class="bi bi-puzzle"></i> Problemas
+        </a>
+        <a href="/" class="admin-nav-link">
+            <i class="bi bi-house"></i> Início
+        </a>
+    </aside>
+
+    <!-- Content -->
+    <div class="admin-content">
+        <div class="admin-header d-flex justify-content-between align-items-start">
+            <div>
+                <h1>Gerenciar Problemas</h1>
+                <p>Crie, edite e remova as soluções exibidas aos clientes</p>
+            </div>
+            <button class="btn-primary-glow" style="border:none;padding:0.6rem 1.25rem;font-size:0.85rem;"
+                    @onclick="OpenCreate">
+                <i class="bi bi-plus-lg me-2"></i>Novo Problema
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(feedbackMessage))
+        {
+            <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;color:#10b981;font-size:0.85rem;">
+                <i class="bi bi-check-circle me-2"></i> @feedbackMessage
+            </div>
+        }
+
+        @if (isLoading)
+        {
+            <div class="text-center py-5"><div class="spinner-custom"></div></div>
+        }
+        else
+        {
+            <div class="table-responsive table-glass">
+                <table class="table table-glass mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nome</th>
+                            <th>Categoria</th>
+                            <th>Tempo Estimado</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in problems)
+                        {
+                            <tr>
+                                <td style="color:var(--text-muted);">@p.Id</td>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                                        <i class="bi @p.IconClass" style="color:var(--accent-purple-light);"></i>
+                                        <span style="font-weight:500;">@p.Name</span>
+                                    </div>
+                                </td>
+                                <td><span class="card-category" style="font-size:0.7rem;">@p.Category</span></td>
+                                <td style="color:var(--text-muted);font-size:0.85rem;">@p.EstimatedResponseTime</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn-action" style="background:rgba(124,58,237,0.15);color:var(--accent-purple-light);border:1px solid rgba(124,58,237,0.3);"
+                                                @onclick="() => OpenEdit(p)">
+                                            <i class="bi bi-pencil me-1"></i>Editar
+                                        </button>
+                                        <button class="btn-action btn-reject" @onclick="() => DeleteProblem(p.Id)">
+                                            <i class="bi bi-trash me-1"></i>Remover
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+@if (showModal)
+{
+    <div class="modal show d-block modal-consultoria" tabindex="-1" @onclick="CloseModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg" @onclick:stopPropagation>
+            <div class="modal-content modal-content-dark">
+                <div class="modal-header modal-header-dark border-0">
+                    <h5 class="modal-title-dark">
+                        <i class="bi @(isEditing ? "bi-pencil" : "bi-plus-circle") me-2" style="color:var(--accent-cyan);"></i>
+                        @(isEditing ? "Editar Problema" : "Novo Problema")
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body modal-body-dark">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label-dark">Nome do Problema *</label>
+                            <input type="text" class="form-control form-control-dark" @bind="editingProblem.Name" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-dark">Categoria</label>
+                            <input type="text" class="form-control form-control-dark" @bind="editingProblem.Category" placeholder="Backend, Frontend, DevOps..." />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-dark">Tempo Estimado</label>
+                            <input type="text" class="form-control form-control-dark" @bind="editingProblem.EstimatedResponseTime" placeholder="2-4 horas" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-dark">Ícone Bootstrap (classe)</label>
+                            <input type="text" class="form-control form-control-dark" @bind="editingProblem.IconClass" placeholder="bi-code-slash" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label-dark">Descrição *</label>
+                            <textarea class="form-control form-control-dark" rows="4" @bind="editingProblem.Description"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button class="btn-primary-glow" style="border:none;padding:0.75rem 2rem;"
+                                @onclick="SaveProblem" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" style="width:14px;height:14px;border-width:2px;"></span>
+                            }
+                            @(isSaving ? "Salvando..." : (isEditing ? "Salvar Alterações" : "Criar Problema"))
+                        </button>
+                        <button class="btn-outline-glass" style="padding:0.75rem 1.5rem;" @onclick="CloseModal">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show" style="opacity:0.7;background:#000;"></div>
+}
+
+@code {
+    private List<ProblemDto> problems = new();
+    private ProblemDto editingProblem = new();
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    private string feedbackMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadProblems();
+
+    private async Task LoadProblems()
+    {
+        isLoading = true;
+        problems = await ProblemService.GetAllProblemsAsync();
+        isLoading = false;
+    }
+
+    private void OpenCreate()
+    {
+        editingProblem = new ProblemDto { IconClass = "bi-code-slash" };
+        isEditing = false;
+        showModal = true;
+    }
+
+    private void OpenEdit(ProblemDto p)
+    {
+        editingProblem = new ProblemDto
+        {
+            Id = p.Id, Name = p.Name, Description = p.Description,
+            EstimatedResponseTime = p.EstimatedResponseTime,
+            Category = p.Category, IconClass = p.IconClass
+        };
+        isEditing = true;
+        showModal = true;
+    }
+
+    private void CloseModal() => showModal = false;
+
+    private async Task SaveProblem()
+    {
+        isSaving = true;
+        if (isEditing)
+            await Http.PutAsJsonAsync($"api/admin/problems/{editingProblem.Id}", editingProblem);
+        else
+            await Http.PostAsJsonAsync("api/admin/problems", editingProblem);
+
+        isSaving = false;
+        feedbackMessage = isEditing ? "Problema atualizado!" : "Problema criado!";
+        showModal = false;
+        await LoadProblems();
+        await Task.Delay(4000);
+        feedbackMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task DeleteProblem(int id)
+    {
+        await Http.DeleteAsync($"api/admin/problems/{id}");
+        feedbackMessage = "Problema removido.";
+        await LoadProblems();
+        await Task.Delay(4000);
+        feedbackMessage = string.Empty;
+        StateHasChanged();
+    }
+}

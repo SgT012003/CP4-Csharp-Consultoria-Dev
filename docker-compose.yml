@@ -1,0 +1,52 @@
+services:
+  # ── Blazor App (Server + Client) ──────────────────────────────────────────
+  consultoria-app:
+    image: consultoria-blazor-app:latest
+    build:
+      context: .
+      dockerfile: Consultoria.Server/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      sqlserver-db:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=sqlserver-db,1433;Database=ConsultoriaDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;Encrypt=False
+      - MasterAccessKey=${MASTER_ACCESS_KEY}
+      - WhatsAppApiToken=${WHATSAPP_API_TOKEN}
+    restart: unless-stopped
+    networks:
+      - consultoria-net
+
+  # ── SQL Server 2022 ───────────────────────────────────────────────────────
+  sqlserver-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SA_PASSWORD}
+      - MSSQL_PID=Express
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"${SA_PASSWORD}\" -Q \"SELECT 1\" -C || exit 1" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - consultoria-net
+
+# ── Volumes ───────────────────────────────────────────────────────────────
+volumes:
+  sqlserver_data:
+    driver: local
+
+# ── Networks ─────────────────────────────────────────────────────────────
+networks:
+  consultoria-net:
+    driver: bridge

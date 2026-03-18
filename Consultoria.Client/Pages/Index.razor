@@ -1,0 +1,297 @@
+@page "/"
+@using Consultoria.Client.Services
+@using Consultoria.Shared.DTOs
+@inject ProblemService ProblemService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>Consultoria Dev — Soluções em Desenvolvimento</PageTitle>
+
+<!-- ── Hero Section ── -->
+<section class="hero-section">
+    <div class="hero-bg"></div>
+    <div class="hero-grid-lines"></div>
+
+    <!-- Anti-Gravity Floating Orbs -->
+    <div class="floating-elements-container">
+        <div class="floating-element float-orb-1"></div>
+        <div class="floating-element float-orb-2"></div>
+        <div class="floating-element float-orb-3"></div>
+    </div>
+
+    <div class="container position-relative">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <div class="d-inline-flex align-items-center gap-2 mb-4"
+                     style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:100px;padding:0.4rem 1rem;">
+                    <span class="text-accent-cyan" style="font-size:0.75rem;font-weight:700;letter-spacing:0.1em;">
+                        PLATFORM v1.0
+                    </span>
+                </div>
+
+                <h1 class="hero-title mb-4">
+                    Consultoria<br />
+                    <span class="gradient-text">Especializada</span><br />
+                    em Desenvolvimento
+                </h1>
+
+                <p class="hero-subtitle mb-4">
+                    Soluções técnicas sob medida para equipes de desenvolvimento.
+                    De otimização de APIs a arquitetura de microsserviços — resolva
+                    seus problemas com especialistas.
+                </p>
+
+                <div class="hero-cta-group">
+                    <button class="btn-primary-glow" @onclick="ScrollToProblems">
+                        <i class="bi bi-lightning-charge me-2"></i> Ver Soluções
+                    </button>
+                    <a href="/register" class="btn-outline-glass" style="text-decoration:none;">
+                        <i class="bi bi-person-plus me-2"></i> Criar Conta
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-5 d-none d-lg-flex justify-content-center align-items-center">
+                <!-- Decorative code block -->
+                <div style="background:rgba(13,13,26,0.9);border:1px solid var(--border-glass);border-radius:16px;padding:1.5rem;font-family:monospace;font-size:0.8rem;line-height:1.8;min-width:300px;backdrop-filter:blur(20px);">
+                    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                        <span style="width:12px;height:12px;border-radius:50%;background:#ef4444;"></span>
+                        <span style="width:12px;height:12px;border-radius:50%;background:#f59e0b;"></span>
+                        <span style="width:12px;height:12px;border-radius:50%;background:#10b981;"></span>
+                    </div>
+                    <div><span style="color:#7c3aed;">services</span><span style="color:var(--text-muted);">.</span><span style="color:#00d4ff;">AddConsultoria</span><span style="color:var(--text-muted);">();</span></div>
+                    <div style="margin-top:0.5rem;"><span style="color:#7c3aed;">app</span><span style="color:var(--text-muted);">.</span><span style="color:#00d4ff;">UseAntiGravity</span><span style="color:var(--text-muted);">();</span></div>
+                    <div style="margin-top:0.5rem;"><span style="color:#10b981;">// ✓ problem solved</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Stats Bar ── -->
+<div class="container" style="margin-top:-2rem;position:relative;z-index:10;">
+    <div class="stats-bar">
+        <div class="stat-item">
+            <div class="stat-value">@problems.Count</div>
+            <div class="stat-label">Áreas de Consultoria</div>
+        </div>
+        <div class="stat-item" style="border-left:1px solid var(--border-glass);padding-left:3rem;">
+            <div class="stat-value">24h</div>
+            <div class="stat-label">Tempo Médio de Resposta</div>
+        </div>
+        <div class="stat-item" style="border-left:1px solid var(--border-glass);padding-left:3rem;">
+            <div class="stat-value">100%</div>
+            <div class="stat-label">Satisfação Garantida</div>
+        </div>
+        <div class="stat-item" style="border-left:1px solid var(--border-glass);padding-left:3rem;">
+            <div class="stat-value">NET8</div>
+            <div class="stat-label">Powered by .NET</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Problems Section ── -->
+<section class="section-padding" id="problems-section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">SOLUÇÕES DISPONÍVEIS</span>
+            <h2 class="section-title">Escolha seu Problema,<br />Nós Resolvemos</h2>
+            <p class="section-subtitle">
+                Clique em qualquer card para solicitar consultoria especializada imediatamente.
+            </p>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-custom" style="margin:0 auto;"></div>
+                <p style="color:var(--text-muted);margin-top:1.5rem;font-size:0.9rem;">Carregando soluções...</p>
+            </div>
+        }
+        else if (!problems.Any())
+        {
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <h3>Nenhuma solução disponível</h3>
+                <p>As soluções serão carregadas em breve.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var problem in problems)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="problem-card" @onclick="() => SelectProblem(problem)">
+                            <i class="bi @problem.IconClass card-icon"></i>
+                            <span class="card-category">@problem.Category</span>
+                            <h3 class="card-title">@problem.Name</h3>
+                            <p class="card-description">@problem.Description</p>
+                            <div class="card-footer">
+                                <span class="card-time">
+                                    <i class="bi bi-clock"></i> @problem.EstimatedResponseTime
+                                </span>
+                                <span class="card-action">
+                                    Solicitar <i class="bi bi-arrow-right"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+<!-- ── Request Modal ── -->
+@if (showModal && selectedProblem != null)
+{
+    <div class="modal show d-block modal-consultoria" tabindex="-1" @onclick="CloseModal">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation>
+            <div class="modal-content modal-content-dark">
+                <div class="modal-header modal-header-dark border-0">
+                    <h5 class="modal-title-dark">
+                        <i class="bi bi-send me-2" style="color:var(--accent-cyan);"></i>
+                        Solicitar Consultoria
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body modal-body-dark">
+                    <div class="selected-problem-badge">
+                        <i class="bi @selectedProblem.IconClass"></i>
+                        <div>
+                            <small style="color:var(--text-muted);font-size:0.7rem;font-weight:600;text-transform:uppercase;">Problema Selecionado</small>
+                            <strong>@selectedProblem.Name</strong>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;color:#ef4444;font-size:0.85rem;">
+                            <i class="bi bi-exclamation-circle me-2"></i> @errorMessage
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label-dark">Nome Completo *</label>
+                        <input type="text" class="form-control form-control-dark"
+                               @bind="clientName" placeholder="Ex.: João da Silva" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label-dark">Email *</label>
+                        <input type="email" class="form-control form-control-dark"
+                               @bind="clientEmail" placeholder="joao@empresa.com" />
+                    </div>
+
+                    <button class="btn-primary-glow w-100" @onclick="SubmitRequest" disabled="@isSubmitting"
+                            style="border:none;width:100%;padding:0.85rem;">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" style="width:14px;height:14px;border-width:2px;"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-send me-2"></i>
+                        }
+                        @(isSubmitting ? "Enviando..." : "Enviar Solicitação")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show" style="opacity:0.7;background:#000;"></div>
+}
+
+<!-- ── Success Toast ── -->
+@if (showSuccessToast)
+{
+    <div class="toast-success">
+        <i class="bi bi-check-circle-fill toast-icon"></i>
+        <div class="toast-content">
+            <strong>Solicitação Enviada!</strong>
+            <span>Nossa equipe entrará em contato em breve.</span>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ProblemDto> problems = new();
+    private ProblemDto? selectedProblem;
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool showSuccessToast = false;
+    private bool isSubmitting = false;
+    private string clientName = string.Empty;
+    private string clientEmail = string.Empty;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        problems = await ProblemService.GetAllProblemsAsync();
+        isLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("AntiGravity.reinitialize");
+        }
+    }
+
+    private void SelectProblem(ProblemDto problem)
+    {
+        selectedProblem = problem;
+        clientName = string.Empty;
+        clientEmail = string.Empty;
+        errorMessage = string.Empty;
+        showModal = true;
+    }
+
+    private void CloseModal() => showModal = false;
+
+    private async Task SubmitRequest()
+    {
+        errorMessage = string.Empty;
+        if (string.IsNullOrWhiteSpace(clientName) || string.IsNullOrWhiteSpace(clientEmail))
+        {
+            errorMessage = "Por favor, preencha todos os campos.";
+            return;
+        }
+        if (!clientEmail.Contains('@'))
+        {
+            errorMessage = "Insira um email válido.";
+            return;
+        }
+
+        isSubmitting = true;
+        var (success, message) = await ConsultationService.SubmitRequestAsync(new()
+        {
+            ClientName = clientName,
+            ClientEmail = clientEmail,
+            ProblemId = selectedProblem!.Id
+        });
+        isSubmitting = false;
+
+        if (success)
+        {
+            showModal = false;
+            showSuccessToast = true;
+            StateHasChanged();
+            await Task.Delay(5000);
+            showSuccessToast = false;
+        }
+        else
+        {
+            errorMessage = message;
+        }
+    }
+
+    private async Task ScrollToProblems()
+    {
+        await JS.InvokeVoidAsync("scrollToElement", "problems-section");
+    }
+
+    [Inject] private ConsultationService ConsultationService { get; set; } = null!;
+}

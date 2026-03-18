@@ -1,0 +1,238 @@
+@page "/admin/dashboard"
+@attribute [Authorize(Roles = "Admin")]
+@using Consultoria.Client.Services
+@using Consultoria.Shared.DTOs
+@using Consultoria.Shared.Enums
+@using Microsoft.AspNetCore.Authorization
+@inject ConsultationService ConsultationService
+
+<PageTitle>Dashboard Admin — Consultoria Dev</PageTitle>
+
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="pb-3 mb-3" style="border-bottom:1px solid var(--border-glass);">
+            <div style="font-size:1.1rem;font-weight:800;color:var(--text-primary);">
+                Consultoria<span style="color:var(--accent-cyan);">Dev</span>
+            </div>
+            <small style="color:var(--text-muted);font-size:0.75rem;">Painel Administrativo</small>
+        </div>
+        <div class="admin-sidebar-title">Menu</div>
+        <a href="/admin/dashboard" class="admin-nav-link active">
+            <i class="bi bi-grid"></i> Dashboard
+        </a>
+        <a href="/admin/problems" class="admin-nav-link">
+            <i class="bi bi-puzzle"></i> Problemas
+        </a>
+        <a href="/" class="admin-nav-link" style="margin-top:auto;">
+            <i class="bi bi-house"></i> Início
+        </a>
+    </aside>
+
+    <!-- Content -->
+    <div class="admin-content">
+        <div class="admin-header">
+            <h1>Dashboard</h1>
+            <p>Gerencie todas as solicitações de consultoria</p>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="summary-icon" style="background:rgba(251,191,36,0.1);">
+                        <i class="bi bi-hourglass-split" style="color:#fbbf24;"></i>
+                    </div>
+                    <div>
+                        <div class="summary-card-value">@requests.Count(r => r.Status == RequestStatus.Pending)</div>
+                        <div class="summary-card-label">Pendentes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="summary-icon" style="background:rgba(16,185,129,0.1);">
+                        <i class="bi bi-check-circle" style="color:#10b981;"></i>
+                    </div>
+                    <div>
+                        <div class="summary-card-value">@requests.Count(r => r.Status == RequestStatus.Approved)</div>
+                        <div class="summary-card-label">Aprovadas</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="summary-icon" style="background:rgba(0,212,255,0.1);">
+                        <i class="bi bi-send" style="color:var(--accent-cyan);"></i>
+                    </div>
+                    <div>
+                        <div class="summary-card-value">@requests.Count(r => r.Status == RequestStatus.Dispatched)</div>
+                        <div class="summary-card-label">Encaminhadas</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="summary-icon" style="background:rgba(124,58,237,0.1);">
+                        <i class="bi bi-collection" style="color:var(--accent-purple-light);"></i>
+                    </div>
+                    <div>
+                        <div class="summary-card-value">@requests.Count</div>
+                        <div class="summary-card-label">Total</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Feedback -->
+        @if (!string.IsNullOrEmpty(feedbackMessage))
+        {
+            <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;color:#10b981;font-size:0.85rem;display:flex;align-items:center;gap:0.5rem;">
+                <i class="bi bi-check-circle"></i> @feedbackMessage
+                @if (whatsAppLink != null)
+                {
+                    <a href="@whatsAppLink" target="_blank"
+                       style="background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.4);border-radius:8px;padding:0.3rem 0.75rem;color:#25d366;text-decoration:none;font-weight:600;font-size:0.8rem;margin-left:0.5rem;">
+                        <i class="bi bi-whatsapp me-1"></i> Abrir WhatsApp
+                    </a>
+                }
+            </div>
+        }
+
+        <!-- Requests Table -->
+        @if (isLoading)
+        {
+            <div class="text-center py-5"><div class="spinner-custom"></div></div>
+        }
+        else if (!requests.Any())
+        {
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <h3>Nenhuma solicitação ainda</h3>
+                <p>As solicitações dos clientes aparecerão aqui.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive table-glass">
+                <table class="table table-glass mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Cliente</th>
+                            <th>Problema</th>
+                            <th>Status</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in requests)
+                        {
+                            <tr>
+                                <td style="color:var(--text-muted);">@req.Id</td>
+                                <td>
+                                    <div style="font-weight:500;">@req.ClientName</div>
+                                    <small style="color:var(--text-muted);">@req.ClientEmail</small>
+                                </td>
+                                <td>@req.ProblemName</td>
+                                <td><span class="status-badge status-@req.Status.ToString().ToLower()">@req.Status</span></td>
+                                <td style="color:var(--text-muted);font-size:0.8rem;">@req.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        @if (req.Status == RequestStatus.Pending)
+                                        {
+                                            <button class="btn-action btn-approve" @onclick="() => UpdateStatus(req.Id, RequestStatus.Approved)">
+                                                <i class="bi bi-check me-1"></i>Aprovar
+                                            </button>
+                                            <button class="btn-action btn-reject" @onclick="() => UpdateStatus(req.Id, RequestStatus.Rejected)">
+                                                <i class="bi bi-x me-1"></i>Reprovar
+                                            </button>
+                                        }
+                                        @if (req.Status == RequestStatus.Approved && developers.Any())
+                                        {
+                                            <select class="form-control-dark" style="border-radius:8px;padding:0.3rem 0.5rem;font-size:0.8rem;color:var(--text-primary);background:rgba(255,255,255,0.04);border:1px solid var(--border-glass);"
+                                                    @bind="selectedDeveloperIds[req.Id]">
+                                                <option value="0">— Dev —</option>
+                                                @foreach (var dev in developers.Where(d => d.IsAvailable))
+                                                {
+                                                    <option value="@dev.Id">@dev.Name</option>
+                                                }
+                                            </select>
+                                            <button class="btn-action btn-dispatch" @onclick="() => Dispatch(req.Id)">
+                                                <i class="bi bi-whatsapp me-1"></i>Encaminhar
+                                            </button>
+                                        }
+                                        @if (req.Status == RequestStatus.Dispatched)
+                                        {
+                                            <span style="font-size:0.8rem;color:var(--accent-cyan);">
+                                                <i class="bi bi-check2-all me-1"></i>@req.AssignedDeveloperName
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<ConsultationRequestDto> requests = new();
+    private List<DeveloperDto> developers = new();
+    private Dictionary<int, int> selectedDeveloperIds = new();
+    private bool isLoading = true;
+    private string feedbackMessage = string.Empty;
+    private string? whatsAppLink;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        requests = await ConsultationService.GetAllRequestsAsync();
+        developers = await ConsultationService.GetDevelopersAsync();
+        foreach (var req in requests)
+            if (!selectedDeveloperIds.ContainsKey(req.Id))
+                selectedDeveloperIds[req.Id] = 0;
+        isLoading = false;
+    }
+
+    private async Task UpdateStatus(int id, RequestStatus status)
+    {
+        var success = await ConsultationService.UpdateStatusAsync(id, new UpdateConsultationRequestDto { Status = status });
+        if (success)
+        {
+            feedbackMessage = status == RequestStatus.Approved ? "Solicitação aprovada!" : "Solicitação reprovada.";
+            whatsAppLink = null;
+            await LoadData();
+            await Task.Delay(4000);
+            feedbackMessage = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Dispatch(int requestId)
+    {
+        var devId = selectedDeveloperIds.GetValueOrDefault(requestId);
+        if (devId == 0) return;
+
+        var link = await ConsultationService.DispatchAsync(requestId, devId);
+        if (link != null)
+        {
+            whatsAppLink = link;
+            feedbackMessage = "Desenvolvedor notificado via WhatsApp!";
+            await LoadData();
+            await Task.Delay(8000);
+            feedbackMessage = string.Empty;
+            whatsAppLink = null;
+            StateHasChanged();
+        }
+    }
+}

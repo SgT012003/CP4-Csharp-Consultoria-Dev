@@ -1,0 +1,98 @@
+@page "/login"
+@using Consultoria.Client.Services
+@using Consultoria.Shared.DTOs
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Login — Consultoria Dev</PageTitle>
+
+<div class="auth-bg"></div>
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <h2>Consultoria<span style="color:var(--accent-cyan);">Dev</span></h2>
+            <p>Acesse sua conta para continuar</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.5rem;color:#ef4444;font-size:0.85rem;">
+                <i class="bi bi-exclamation-circle me-2"></i> @errorMessage
+            </div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label-dark">Email</label>
+            <input type="email" class="form-control form-control-dark"
+                   @bind="email" placeholder="admin@consultoria.com" />
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label-dark">Senha</label>
+            <input type="password" class="form-control form-control-dark"
+                   @bind="password" placeholder="••••••••"
+                   @onkeypress="HandleKeyPress" />
+        </div>
+
+        <button class="btn-primary-glow" style="width:100%;border:none;padding:0.85rem;"
+                @onclick="HandleLogin" disabled="@isLoading">
+            @if (isLoading)
+            {
+                <span class="spinner-border spinner-border-sm me-2" style="width:14px;height:14px;border-width:2px;"></span>
+            }
+            else
+            {
+                <i class="bi bi-box-arrow-in-right me-2"></i>
+            }
+            @(isLoading ? "Autenticando..." : "Entrar")
+        </button>
+
+        <div style="text-align:center;margin-top:1.5rem;color:var(--text-muted);font-size:0.85rem;">
+            Não tem conta?
+            <a href="/register" style="color:var(--accent-cyan);text-decoration:none;">Criar uma agora</a>
+        </div>
+
+        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border-glass);text-align:center;">
+            <small style="color:var(--text-muted);font-size:0.75rem;">
+                <i class="bi bi-info-circle me-1"></i>
+                Admin demo: admin@consultoria.com / Admin@123!
+            </small>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string email = string.Empty;
+    private string password = string.Empty;
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+
+    private async Task HandleLogin()
+    {
+        errorMessage = string.Empty;
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "Preencha email e senha.";
+            return;
+        }
+
+        isLoading = true;
+        var result = await AuthService.LoginAsync(new LoginDto { Email = email, Password = password });
+        isLoading = false;
+
+        if (result.Success)
+        {
+            var isAdmin = result.User?.Roles.Contains("Admin") ?? false;
+            Navigation.NavigateTo(isAdmin ? "/admin/dashboard" : "/", forceLoad: true);
+        }
+        else
+        {
+            errorMessage = result.Message;
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await HandleLogin();
+    }
+}
